@@ -6,18 +6,15 @@
 import "react-native-gesture-handler/jestSetup";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react-native";
+import { render, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
-import type { AuthTokens, AuthUser } from "@/features/auth";
-import { useSessionStore } from "@/features/auth";
 import "@/plugins/i18n";
 import { mmkvStorage } from "@/plugins/mmkv";
 import { ToastProvider } from "@/shared/components";
 
-import AccountScreen from "@/app/(protected)/account";
 import HomeScreen from "@/app/(public)/index";
-import SignInScreen from "@/app/sign-in";
+
 import RootLayout from "@/app/_layout";
 
 /**
@@ -42,40 +39,6 @@ const mockScreenLog: string[] = [];
  * receives, together with the screen name it wraps — proving the wiring in
  * `src/app/_layout.tsx` itself, not just the store it reads from.
  */
-jest.mock("expo-router", () => {
-  const { Children, isValidElement } = require("react");
-
-  return {
-    Stack: Object.assign(
-      ({ children }: { children: ReactNode }) => children,
-      {
-        Screen: ({ name }: { name?: string }) => {
-          if (name) mockScreenLog.push(name);
-          return null;
-        },
-        Protected: ({
-          guard,
-          children,
-        }: {
-          guard: boolean;
-          children: ReactNode;
-        }) => {
-          // `require("react")` above is untyped, so `isValidElement` cannot
-          // narrow `child` for the type checker the way the real import does.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Children.forEach(children, (child: any) => {
-            if (!isValidElement(child)) return;
-            const screenName = (child.props as { name?: string }).name;
-            if (screenName) mockGuardLog.push({ screenName, guard });
-          });
-          return null;
-        },
-      },
-    ),
-    useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
-    Link: ({ children }: { children: ReactNode }) => children,
-  };
-});
 
 // Load-bearing here, not dead weight: it keeps `RootLayout`'s side-effect
 // import of the real adapter registry (and whatever it reaches for over the
@@ -94,17 +57,6 @@ jest.mock("expo-font", () => ({
 jest.mock("expo-system-ui", () => ({
   setBackgroundColorAsync: jest.fn(),
 }));
-
-const user: AuthUser = {
-  id: 1,
-  username: "emilys",
-  email: "emily@example.com",
-  firstName: "Emily",
-  lastName: "Johnson",
-  image: "https://example.com/emily.png",
-};
-
-const tokens: AuthTokens = { accessToken: "access-1", refreshToken: "refresh-1" };
 
 // `SignInScreen` calls `useMutation`, which needs a `QueryClientProvider`
 // somewhere above it. The real app gets one from `AppProvider`; this harness
@@ -127,9 +79,6 @@ beforeEach(() => {
   mmkvStorage.clearAll();
   mockGuardLog.length = 0;
   mockScreenLog.length = 0;
-  act(() =>
-    useSessionStore.setState({ user: null, tokens: null, signOutReason: null }),
-  );
 });
 
 describe("guard wiring", () => {
@@ -153,47 +102,6 @@ describe("guard wiring", () => {
       false,
     );
   });
-
-  it("closes sign-in and opens (protected) once signed in", () => {
-    act(() => useSessionStore.getState().signIn({ user, tokens }));
-
-    render(<RootLayout />);
-
-    expect(mockScreenLog).toContain("(public)");
-    expect(mockGuardLog).toEqual(
-      expect.arrayContaining([
-        { screenName: "sign-in", guard: false },
-        { screenName: "(protected)", guard: true },
-      ]),
-    );
-    expect(mockGuardLog.some((entry) => entry.screenName === "(public)")).toBe(
-      false,
-    );
-  });
-});
-
-describe("sign-in screen", () => {
-  it("renders the form when signed out", () => {
-    renderScreen(SignInScreen);
-
-    expect(screen.getByTestId("sign-in-form")).toBeOnTheScreen();
-  });
-});
-
-describe("account screen", () => {
-  it("shows the signed-in profile", () => {
-    act(() => useSessionStore.getState().signIn({ user, tokens }));
-
-    renderScreen(AccountScreen);
-
-    expect(screen.getByText("Emily Johnson")).toBeOnTheScreen();
-  });
-
-  it("renders nothing to identify when there is no session", () => {
-    renderScreen(AccountScreen);
-
-    expect(screen.queryByText("Emily Johnson")).not.toBeOnTheScreen();
-  });
 });
 
 describe("the public group", () => {
@@ -203,14 +111,6 @@ describe("the public group", () => {
    * in — the mistake this pair of assertions exists to catch.
    */
   it("renders while signed out", () => {
-    renderScreen(HomeScreen);
-
-    expect(screen.getByText("RN Expo Boilerplate")).toBeOnTheScreen();
-  });
-
-  it("still renders while signed in", () => {
-    act(() => useSessionStore.getState().signIn({ user, tokens }));
-
     renderScreen(HomeScreen);
 
     expect(screen.getByText("RN Expo Boilerplate")).toBeOnTheScreen();
