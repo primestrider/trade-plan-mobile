@@ -7,4 +7,8 @@ export const storageKeys = {
     theme: "settings.theme",
     language: "settings.language",
   },
+
+  user: {
+    profile: "user.profile",
+  },
 } as const;

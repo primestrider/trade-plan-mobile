@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 
+import { useProfileStore } from "@/features/onboarding/stores/profile.store";
 import "@/plugins/auth";
 import { appFonts } from "@/plugins/fonts";
 import { AppProvider } from "@/providers/AppProvider";
@@ -15,6 +16,9 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(appFonts);
   const { colors, isDark } = useTheme();
+  const hasCompletedOnboarding = useProfileStore(
+    (state) => state.hasCompletedOnboarding,
+  );
   // Placed above the early return below so the rules of hooks hold: a hook
   // may never run only on some renders.
 
@@ -47,16 +51,28 @@ export default function RootLayout() {
         }}
       >
         {/*
-          Never guarded: the showcase is documentation, readable in either
-          state. `(public)` has no `_layout` of its own, so its screens are
-          hoisted into this navigator and the name below matches
-          `(public)/index` alone — these options configure the home screen, not
-          the group. Left that way deliberately: giving the group a layout would
-          cascade `headerShown: false` over every showcase screen. Nothing is
-          wrong because nothing here is guarded; a guard would need the layout.
-          See `tests/app/routes.test.ts`.
+          The onboarding gate. `Stack.Protected` removes routes rather than
+          redirecting, so while the profile is missing `(public)` is not in the
+          navigator at all and onboarding is simply the only place left to be.
+          Storing the profile flips both guards and carries the user in — no
+          `router.replace`, and no frame where the home screen shows through.
+
+          MMKV rehydrates the store synchronously, so this reads the real value
+          on the first render rather than defaulting to "not onboarded" and
+          correcting itself a frame later.
+
+          `(public)` has a `_layout.tsx` for this reason alone: a guard can only
+          remove a route node it can name, and without the layout its screens
+          are hoisted into this navigator under compound names. See
+          `tests/app/routes.test.ts`.
         */}
-        <Stack.Screen name="(public)" options={{ headerShown: false }} />
+        <Stack.Protected guard={!hasCompletedOnboarding}>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        </Stack.Protected>
+
+        <Stack.Protected guard={hasCompletedOnboarding}>
+          <Stack.Screen name="(public)" options={{ headerShown: false }} />
+        </Stack.Protected>
 
         {/* Signing in removes this route, and that is what moves the user on. */}
         {/* <Stack.Protected guard={!isAuthenticated}>

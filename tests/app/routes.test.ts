@@ -79,6 +79,20 @@ function resolveAppRoutes(): RouteNode {
 const rootChildNames = (): string[] =>
   resolveAppRoutes().children.map((child) => child.route);
 
+/**
+ * The removal `expo-router/build/useScreens.js` performs when a guard closes:
+ * a screen is dropped by matching `route` exactly, or with a trailing
+ * `/index` stripped. Run against the names resolution really produces, so
+ * guarding a name the router does not use removes nothing — the bug above.
+ */
+const keptAfterRemoving = (guarded: string[]): string[] => {
+  const closed = new Set(guarded);
+
+  return rootChildNames().filter(
+    (route) => !closed.has(route) && !closed.has(route.replace(/\/index$/, "")),
+  );
+};
+
 describe("the (protected) group", () => {
   /**
    * The name in `<Stack.Protected guard={isAuthenticated}>` at
@@ -99,19 +113,8 @@ describe("the (protected) group", () => {
     expect(rootChildNames()).not.toContain("(protected)/account");
   });
 
-  /**
-   * The removal test from `expo-router/build/useScreens.js`, applied to the
-   * name resolution really produces. Guarding a name that survives this filter
-   * is the bug above, restated as the router sees it.
-   */
   it("is removed from the navigator when its guard is closed", () => {
-    const protectedScreens = new Set(["(protected)"]);
-
-    const kept = rootChildNames().filter(
-      (route) =>
-        !protectedScreens.has(route) &&
-        !protectedScreens.has(route.replace(/\/index$/, "")),
-    );
+    const kept = keptAfterRemoving(["(protected)"]);
 
     expect(kept).not.toContain("(protected)");
     expect(kept.some((route) => route.startsWith("(protected)"))).toBe(false);
@@ -120,16 +123,58 @@ describe("the (protected) group", () => {
 
 describe("the (public) group", () => {
   /**
-   * Deliberately left without a `_layout.tsx`: see the comment at
-   * `src/app/_layout.tsx`. Its screens are hoisted into the root navigator, so
-   * `<Stack.Screen name="(public)">` configures the home screen alone. That is
-   * harmless because `(public)` is never guarded — but it is only harmless
-   * while it stays unguarded, which is what this test pins down.
+   * It was deliberately left without a `_layout.tsx` while nothing guarded it.
+   * The onboarding gate in `src/app/_layout.tsx` guards it now, so it needs a
+   * node of its own: `useScreens` removes a guarded screen by matching `route`,
+   * and hoisted screens carry compound names (`(public)/settings`) that a guard
+   * naming `(public)` would never match. The home screen alone would have
+   * survived on the trailing-`/index` fallback — the second screen added to the
+   * group is the one that would have slipped through.
    */
-  it("is hoisted into the root navigator, so only (public)/index exists", () => {
+  it("resolves to a root route node of its own", () => {
     const names = rootChildNames();
 
-    expect(names).toContain("(public)/index");
-    expect(names).not.toContain("(public)");
+    expect(names).toContain("(public)");
+    expect(names).not.toContain("(public)/index");
+  });
+
+  it("keeps the home screen inside the group rather than hoisting it", () => {
+    const group = resolveAppRoutes().children.find(
+      (child) => child.route === "(public)",
+    );
+
+    expect(group?.children.map((child) => child.route)).toContain("index");
+  });
+});
+
+describe("the onboarding gate", () => {
+  /**
+   * `src/app/_layout.tsx` guards this name directly rather than a group, so
+   * the route file has to sit at the root of `src/app`.
+   */
+  it("resolves to a root route node of its own", () => {
+    expect(rootChildNames()).toContain("onboarding");
+  });
+
+  /**
+   * Run for each side of the gate: one that removes both sides at once would
+   * leave the user with nowhere to be.
+   */
+  it("leaves onboarding standing while the profile is missing", () => {
+    const kept = keptAfterRemoving(["(public)"]);
+
+    expect(kept).toContain("onboarding");
+    expect(kept).not.toContain("(public)");
+  });
+
+  it("is itself removed once the profile is stored", () => {
+    // Asserted here too, not just in the sibling test above: without it this
+    // one passes just as happily when there is no onboarding route at all.
+    expect(rootChildNames()).toContain("onboarding");
+
+    const kept = keptAfterRemoving(["onboarding"]);
+
+    expect(kept).toContain("(public)");
+    expect(kept).not.toContain("onboarding");
   });
 });
