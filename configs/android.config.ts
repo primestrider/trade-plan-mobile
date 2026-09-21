@@ -16,7 +16,7 @@ function getVersionCode(version: string): number {
 }
 
 export const androidConfig: ExpoConfig["android"] = {
-  package: "com.primestrider.rnexpoboilerplate",
+  package: "com.primestrider.tradeplanmobile",
 
   versionCode: getVersionCode(packageJson.version),
 

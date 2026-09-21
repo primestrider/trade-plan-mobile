@@ -5,11 +5,6 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 
-import {
-  selectIsAuthenticated,
-  SessionExpiryToast,
-  useSessionStore,
-} from "@/features/auth";
 import "@/plugins/auth";
 import { appFonts } from "@/plugins/fonts";
 import { AppProvider } from "@/providers/AppProvider";
@@ -22,7 +17,6 @@ export default function RootLayout() {
   const { colors, isDark } = useTheme();
   // Placed above the early return below so the rules of hooks hold: a hook
   // may never run only on some renders.
-  const isAuthenticated = useSessionStore(selectIsAuthenticated);
 
   const isReady = fontsLoaded || fontError !== null;
 
@@ -44,7 +38,7 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <SessionExpiryToast />
+
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.card },
@@ -65,14 +59,14 @@ export default function RootLayout() {
         <Stack.Screen name="(public)" options={{ headerShown: false }} />
 
         {/* Signing in removes this route, and that is what moves the user on. */}
-        <Stack.Protected guard={!isAuthenticated}>
+        {/* <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="sign-in" />
-        </Stack.Protected>
+        </Stack.Protected> */}
 
         {/* Signing out removes this one, carrying the user back out. */}
-        <Stack.Protected guard={isAuthenticated}>
+        {/* <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="(protected)" options={{ headerShown: false }} />
-        </Stack.Protected>
+        </Stack.Protected> */}
       </Stack>
     </AppProvider>
   );
