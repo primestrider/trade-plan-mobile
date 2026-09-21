@@ -1,7 +1,6 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 
-import { AppText, Screen } from "@/shared/components";
 import { useStyles } from "@/styles";
 
 /**
@@ -16,17 +15,7 @@ export default function AccountScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{ title: t("features.example.signIn.account.title") }}
-      />
-      <Screen>
-        <AppText variant="h2">
-          {t("features.example.signIn.account.title")}
-        </AppText>
-        <AppText variant="caption" color="muted" style={styles.mb6}>
-          {t("features.example.signIn.account.subtitle")}
-        </AppText>
-      </Screen>
+      <Stack.Screen options={{ title: "Account" }} />
     </>
   );
 }

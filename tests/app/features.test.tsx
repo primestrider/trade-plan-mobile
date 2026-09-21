@@ -24,30 +24,6 @@ jest.mock("expo-image", () => {
 });
 
 /** No screen may reach the network during a test. */
-jest.mock("@/features/example/services/api", () => ({
-  fetchProducts: jest.fn(() =>
-    Promise.resolve({ products: [], total: 0, skip: 0, limit: 20 }),
-  ),
-  searchProducts: jest.fn(() =>
-    Promise.resolve({ products: [], total: 0, skip: 0, limit: 20 }),
-  ),
-  fetchProductById: jest.fn(() =>
-    Promise.resolve({
-      id: 1,
-      title: "Test Product",
-      description: "A product",
-      category: "misc",
-      price: 9.99,
-      discountPercentage: 0,
-      rating: 4.5,
-      stock: 3,
-      thumbnail: "https://example.com/a.png",
-      images: [],
-      reviews: [],
-    }),
-  ),
-  login: jest.fn(),
-}));
 
 function renderScreen(Component: ComponentType) {
   // Retries would keep a failed query pending past the end of the test.

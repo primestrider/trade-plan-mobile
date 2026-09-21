@@ -1,4 +1,3 @@
-import example from "@/features/example/languages/example.en";
 import utils from "@/shared/languages/utils.en";
 
 /**
@@ -10,9 +9,7 @@ import utils from "@/shared/languages/utils.en";
  */
 export const en = {
   common: {
-    features: {
-      example,
-    },
+    features: {},
     utils,
   },
 };
