@@ -8,7 +8,7 @@ import "react-native-gesture-handler/jestSetup";
 import { act, render } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
-import { useProfileStore } from "@/features/onboarding/stores/profile.store";
+import { useProfileStore } from "@/shared/stores";
 import "@/plugins/i18n";
 import { mmkvStorage } from "@/plugins/mmkv";
 

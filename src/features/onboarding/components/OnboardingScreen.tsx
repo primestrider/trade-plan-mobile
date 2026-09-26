@@ -12,7 +12,7 @@ import {
 import {
   useProfileStore,
   type Profile,
-} from "@/features/onboarding/stores/profile.store";
+} from "@/shared/stores";
 import {
   AppText,
   Button,
