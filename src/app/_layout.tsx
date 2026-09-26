@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 
-import { useProfileStore } from "@/features/onboarding/stores/profile.store";
+import { useProfileStore } from "@/shared/stores";
 import "@/plugins/auth";
 import { appFonts } from "@/plugins/fonts";
 import { AppProvider } from "@/providers/AppProvider";

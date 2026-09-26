@@ -9,7 +9,7 @@ import {
   OnboardingScreen,
   PREPARING_DURATION,
 } from "@/features/onboarding/components/OnboardingScreen";
-import { useProfileStore } from "@/features/onboarding/stores/profile.store";
+import { useProfileStore } from "@/shared/stores";
 import { changeLanguage } from "@/plugins/i18n";
 
 /**

@@ -1,6 +1,6 @@
 import { act } from "@testing-library/react-native";
 
-import { useProfileStore } from "@/features/onboarding/stores/profile.store";
+import { useProfileStore } from "@/shared/stores";
 import { mmkvStorage, storageKeys } from "@/plugins/mmkv";
 
 const initialState = {
