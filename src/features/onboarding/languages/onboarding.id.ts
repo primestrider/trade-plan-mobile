@@ -20,6 +20,12 @@ const id: typeof onboarding = {
     },
   },
 
+  preparing: {
+    status: "Menyiapkan rencana trading Anda…",
+    rule: "Jangan risikokan lebih dari 2% modal Anda dalam satu trade.",
+    limit: "adalah batas risiko per trade dari modal {{balance}}.",
+  },
+
   action: {
     next: "Lanjut",
     back: "Kembali",

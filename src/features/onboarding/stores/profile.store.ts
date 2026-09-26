@@ -5,7 +5,7 @@ import { storageKeys } from "@/plugins/mmkv";
 import { zustandStorage } from "@/plugins/mmkv/zustand";
 
 /** What onboarding collects: who the user is and what they trade with. */
-type Profile = {
+export type Profile = {
   name: string;
   balance: number;
 };

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { createRef } from "react";
 import { StyleSheet, TextInput } from "react-native";
 
+import { changeLanguage } from "@/plugins/i18n";
 import { Input } from "@/shared/components";
 import { colors } from "@/styles/tokens";
 
@@ -85,6 +86,47 @@ describe("Input", () => {
       expect(onChangeText).toHaveBeenCalledWith(expected);
     });
 
+    it("keeps a currency value to whole digits, without leading zeros", () => {
+      const onChangeText = jest.fn();
+      render(
+        <Input placeholder="Amount" type="currency" onChangeText={onChangeText} />,
+      );
+
+      fireEvent.changeText(screen.getByPlaceholderText("Amount"), "0012.5");
+
+      expect(onChangeText).toHaveBeenCalledWith("125");
+    });
+
+    it("groups the digits of a currency value on screen only", () => {
+      const onChangeText = jest.fn();
+      render(
+        <Input
+          placeholder="Amount"
+          type="currency"
+          value="10000000"
+          onChangeText={onChangeText}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText("Amount");
+      // Rupiah grouping, whatever language the test runs in.
+      expect(input.props.value).toBe("10.000.000");
+
+      // Typing into the grouped text hands back bare digits again.
+      fireEvent.changeText(input, `${input.props.value}5`);
+      expect(onChangeText).toHaveBeenCalledWith("100000005");
+    });
+
+    it("groups rupiah with dots even when the UI is in English", async () => {
+      await changeLanguage("en");
+
+      render(<Input placeholder="Amount" type="currency" value="1250000" />);
+
+      expect(screen.getByPlaceholderText("Amount").props.value).toBe(
+        "1.250.000",
+      );
+    });
+
     it("keeps letters for text inputs", () => {
       const onChangeText = jest.fn();
       render(<Input placeholder="Bio" type="text" onChangeText={onChangeText} />);
@@ -113,16 +155,16 @@ describe("Input", () => {
       );
     });
 
-    it.each(["number", "currency"] as const)(
-      "uses a decimal pad for type=%s",
-      (type) => {
-        render(<Input placeholder="Amount" type={type} />);
+    it.each([
+      ["number", "decimal-pad"],
+      ["currency", "number-pad"],
+    ] as const)("configures the keypad for type=%s", (type, keyboardType) => {
+      render(<Input placeholder="Amount" type={type} />);
 
-        expect(screen.getByPlaceholderText("Amount").props.keyboardType).toBe(
-          "decimal-pad",
-        );
-      },
-    );
+      expect(screen.getByPlaceholderText("Amount").props.keyboardType).toBe(
+        keyboardType,
+      );
+    });
 
     it("masks a password", () => {
       render(<Input placeholder="Password" type="password" />);

@@ -3,10 +3,12 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
 } from "@testing-library/react-native";
 
-import { OnboardingScreen } from "@/features/onboarding/components/OnboardingScreen";
+import {
+  OnboardingScreen,
+  PREPARING_DURATION,
+} from "@/features/onboarding/components/OnboardingScreen";
 import { useProfileStore } from "@/features/onboarding/stores/profile.store";
 import { changeLanguage } from "@/plugins/i18n";
 
@@ -88,22 +90,15 @@ describe("the balance step", () => {
     expect(await screen.findByDisplayValue("Ricky")).toBeOnTheScreen();
   });
 
-  /**
-   * The field itself holds bare digits — `Input type="currency"` strips
-   * anything else — so the formatted amount is spelled out beneath it.
-   * Without this the user is counting zeroes.
-   *
-   * Matched with `\s` rather than a literal space: `Intl` separates the symbol
-   * from the digits with a non-breaking one, and which it picks varies between
-   * ICU versions.
-   */
-  it("previews what the digits amount to", async () => {
+  it("marks the amount as rupiah without echoing it below the field", async () => {
     render(<OnboardingScreen />);
     await reachBalanceStep();
 
     fireEvent.changeText(balanceField(), "10000000");
 
-    expect(await screen.findByText(/^Rp\s10\.000\.000$/)).toBeOnTheScreen();
+    expect(screen.getByText("Rp")).toBeOnTheScreen();
+    expect(balanceField().props.value).toBe("10.000.000");
+    expect(screen.queryByText(/10\.000\.000/)).not.toBeOnTheScreen();
   });
 
   it("will not finish on an empty balance", async () => {
@@ -118,19 +113,49 @@ describe("the balance step", () => {
 });
 
 describe("finishing", () => {
-  it("stores the profile, turning the typed rupiah into a number", async () => {
+  /** Submits a valid balance, landing on the preparing screen. */
+  async function submitBalance(balance = "10000000") {
     render(<OnboardingScreen />);
     await reachBalanceStep();
 
-    fireEvent.changeText(balanceField(), "10000000");
+    fireEvent.changeText(balanceField(), balance);
     fireEvent.press(screen.getByText("Mulai"));
 
-    await waitFor(() =>
-      expect(useProfileStore.getState()).toMatchObject({
-        name: "Ricky",
-        balance: 10_000_000,
-        hasCompletedOnboarding: true,
-      }),
-    );
+    await screen.findByText("Menyiapkan rencana trading Anda…");
+  }
+
+  /**
+   * Matched with `\s` rather than a literal space: `Intl` separates the symbol
+   * from the digits with a non-breaking one, and which it picks varies between
+   * ICU versions.
+   */
+  it("works out the 2% risk limit from the capital just entered", async () => {
+    await submitBalance();
+
+    expect(
+      screen.getByText(
+        "Jangan risikokan lebih dari 2% modal Anda dalam satu trade.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByText(/^Rp\s200\.000$/)).toBeOnTheScreen();
+    expect(screen.getByText(/modal Rp\s10\.000\.000\.$/)).toBeOnTheScreen();
+  });
+
+  it("holds the profile back until the preparing pause is over", async () => {
+    await submitBalance();
+
+    expect(useProfileStore.getState().hasCompletedOnboarding).toBe(false);
+    // Nothing is left to press while the plan is being prepared.
+    expect(screen.queryByText("Kembali")).not.toBeOnTheScreen();
+
+    act(() => {
+      jest.advanceTimersByTime(PREPARING_DURATION);
+    });
+
+    expect(useProfileStore.getState()).toMatchObject({
+      name: "Ricky",
+      balance: 10_000_000,
+      hasCompletedOnboarding: true,
+    });
   });
 });
