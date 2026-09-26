@@ -58,9 +58,9 @@ describe("balance", () => {
   });
 
   /**
-   * `Input type="currency"` strips everything but digits and `.`, so a decimal
-   * point is the one stray character that can still arrive. Rupiah is written
-   * without decimals, so it is rejected rather than rounded.
+   * `Input type="currency"` already hands over bare digits, but the schema
+   * does not rely on it. Rupiah is written without decimals, so a decimal is
+   * rejected rather than rounded.
    */
   it("is rejected when it carries decimals", () => {
     expect(firstIssue({ ...valid, balance: "10.5" }).message).toBe(

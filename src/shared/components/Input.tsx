@@ -22,6 +22,7 @@ import {
   useResizeMode,
 } from "react-native-keyboard-controller";
 
+import { formatNumber } from "@/shared/helpers";
 import { text, useStyles, useTheme, view } from "@/styles";
 import { fontSize } from "@/styles/tokens";
 import { fontFamily } from "@/styles/tokens/typography";
@@ -100,13 +101,26 @@ export const Input = forwardRef<TextInput, InputProps>(
     const handleChangeText = useCallback(
       (text: string) => {
         let filtered = text;
-        if (type === "number" || type === "currency") {
+        if (type === "number") {
           filtered = text.replace(/[^0-9.]/g, "");
+        } else if (type === "currency") {
+          // Whole units only, so every non-digit — including the grouping
+          // marks this input displays — is dropped, as are leading zeros.
+          filtered = text.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
         }
         onChangeText?.(filtered);
       },
       [type, onChangeText],
     );
+
+    // A currency field holds bare digits; the grouping marks exist only on
+    // screen, so what the caller stores never has to be parsed back. The
+    // amount is rupiah, so it is grouped the Indonesian way (`10.000.000`)
+    // whatever language the UI is in.
+    const displayValue =
+      type === "currency" && value
+        ? formatNumber(value, { language: "id", maximumFractionDigits: 0 })
+        : value;
 
     const handleSubmitEditing = useCallback(
       (e: any) => {
@@ -132,7 +146,7 @@ export const Input = forwardRef<TextInput, InputProps>(
         case "number":
           return { keyboardType: "decimal-pad" as KeyboardTypeOptions };
         case "currency":
-          return { keyboardType: "decimal-pad" as KeyboardTypeOptions };
+          return { keyboardType: "number-pad" as KeyboardTypeOptions };
         case "password":
           return { secureTextEntry: true };
         default:
@@ -213,7 +227,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               },
               style,
             ]}
-            value={value}
+            value={displayValue}
             onChangeText={handleChangeText}
             onFocus={handleFocus}
             onBlur={handleBlur}

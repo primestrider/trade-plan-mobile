@@ -11,8 +11,8 @@ import { translationKey } from "@/shared/models/i18n";
  * guaranteed the text is digits.
  *
  * Rupiah is written without decimals (see `formatCurrency`), so a decimal
- * point is rejected rather than rounded — the one stray character that can
- * survive `Input type="currency"`, which otherwise strips non-digits.
+ * point is rejected rather than rounded. `Input type="currency"` already hands
+ * over bare digits; the check keeps the store safe from any other caller.
  */
 const WHOLE_RUPIAH = /^\d+$/;
 

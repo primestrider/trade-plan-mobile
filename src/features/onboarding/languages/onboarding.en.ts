@@ -25,6 +25,12 @@ export default {
     },
   },
 
+  preparing: {
+    status: "Preparing your trading plan…",
+    rule: "Never risk more than 2% of your capital on a single trade.",
+    limit: "is your risk limit per trade, from a capital of {{balance}}.",
+  },
+
   action: {
     next: "Continue",
     back: "Back",
