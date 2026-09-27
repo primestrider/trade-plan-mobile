@@ -18,6 +18,8 @@ type ProfileState = Profile & {
    */
   hasCompletedOnboarding: boolean;
   completeOnboarding: (profile: Profile) => void;
+  /** Replaces the capital the trading plan is measured against. */
+  setBalance: (balance: number) => void;
 };
 
 /**
@@ -40,6 +42,8 @@ export const useProfileStore = create<ProfileState>()(
 
       completeOnboarding: ({ name, balance }) =>
         set({ name, balance, hasCompletedOnboarding: true }),
+
+      setBalance: (balance) => set({ balance }),
     }),
     {
       name: storageKeys.user.profile,

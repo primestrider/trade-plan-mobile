@@ -1,43 +1,26 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import {
-  Animated,
-  Modal,
-  PanResponder,
-  ScrollView,
-  useWindowDimensions,
-  View,
-  type LayoutChangeEvent,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomSheet as NativeBottomSheet, RNHostView } from "@expo/ui";
+import { useEffect, useState, type ReactNode } from "react";
+import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
 
 import { useStyles, useTheme, view } from "@/styles";
-import { radii, spacing } from "@/styles/tokens";
 
 import { AppText } from "./AppText";
-import { Backdrop, useOverlayTransition } from "./internal/Overlay";
 
-/** Height of the sheet before it is measured, so the first frame is offscreen. */
-const ASSUMED_HEIGHT = 400;
-
-/** Fraction of the sheet that must be dragged away before it dismisses. */
-const DISMISS_RATIO = 0.25;
-
-/** Flick speed that dismisses regardless of distance travelled. */
-const DISMISS_VELOCITY = 0.6;
-
-/** Ceiling on the sheet, so it can never cover the whole screen. */
+/** Ceiling on the content, so a long list scrolls instead of running off. */
 const MAX_HEIGHT_RATIO = 0.85;
+
+/** Material 3 caps a bottom sheet's width at this, in dp; iOS phones do not. */
+const MAX_SHEET_WIDTH = 640;
+
+/**
+ * How long the content outlives `visible`: long enough for the native sheet
+ * to finish sliding away with its content still in it.
+ */
+export const SHEET_EXIT_DURATION = 400;
 
 export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
-  /** Tapping the scrim, dragging down, or Android back closes it. Default true. */
-  dismissable?: boolean;
   title?: string;
   /**
    * Applies the standard gutter to the content. Turn off for rows that carry
@@ -51,9 +34,19 @@ export type BottomSheetProps = {
  * Sheet that rises from the bottom edge — the mobile-native place to put a
  * secondary choice or a short form.
  *
- * The drag gesture lives on the handle and header only. Attaching it to the
- * whole sheet would fight any scrollable content inside it for the same
- * downward swipe.
+ * Presented by `@expo/ui`: a SwiftUI sheet on iOS, a Material 3
+ * `ModalBottomSheet` on Android. The platform owns the drag handle, the
+ * dismiss gestures, the scrim, the safe area, and moving out of the
+ * keyboard's way, so none of that is reimplemented here.
+ *
+ * The content is ordinary React Native, bridged in through `RNHostView`. It
+ * is mounted only while the sheet is open (plus its exit), because the iOS
+ * sheet would otherwise keep it mounted all along: a form inside would
+ * autofocus behind the screen and never start fresh. Each open mounts the
+ * content anew, so a draft abandoned by closing is gone next time.
+ *
+ * Native sheets do not pick up the app theme on their own, so the sheet is
+ * painted with the theme's card color for the content to read against.
  *
  * @example
  * <BottomSheet visible={open} onClose={close} title="Sort by">
@@ -64,130 +57,69 @@ export type BottomSheetProps = {
 export function BottomSheet({
   visible,
   onClose,
-  dismissable = true,
   title,
   padded = true,
   children,
 }: Readonly<BottomSheetProps>) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
-  const { mounted, progress } = useOverlayTransition(visible);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
-  const [height, setHeight] = useState(ASSUMED_HEIGHT);
-  const dragY = useState(() => new Animated.Value(0))[0];
+  const [mounted, setMounted] = useState(visible);
 
-  // A sheet dragged halfway and then dismissed must not reopen mid-drag.
+  // Adjusted during render rather than in an effect, so the content is
+  // already there on the frame the sheet starts to rise.
+  if (visible && !mounted) setMounted(true);
+
   useEffect(() => {
-    if (visible) dragY.setValue(0);
-  }, [visible, dragY]);
+    if (visible) return;
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          dismissable && gesture.dy > 4,
-        onPanResponderMove: (_, gesture) => {
-          // Downward only — dragging up must not lift the sheet off its edge.
-          dragY.setValue(Math.max(0, gesture.dy));
-        },
-        onPanResponderRelease: (_, gesture) => {
-          const far = gesture.dy > height * DISMISS_RATIO;
-          const fast = gesture.vy > DISMISS_VELOCITY;
+    const timer = setTimeout(() => setMounted(false), SHEET_EXIT_DURATION);
 
-          if (far || fast) {
-            onClose();
-            return;
-          }
-
-          Animated.spring(dragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 0,
-          }).start();
-        },
-      }),
-    [dismissable, dragY, height, onClose],
-  );
-
-  const translateY = useMemo(
-    () =>
-      Animated.add(
-        progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [height, 0],
-        }),
-        dragY,
-      ),
-    [progress, height, dragY],
-  );
-
-  if (!mounted) return null;
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    setHeight(event.nativeEvent.layout.height);
-  };
+    return () => clearTimeout(timer);
+  }, [visible]);
 
   return (
-    <Modal
-      transparent
-      visible
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={dismissable ? onClose : undefined}
+    <NativeBottomSheet
+      isPresented={visible}
+      onDismiss={onClose}
+      containerColor={colors.card}
+      // The gutter is applied below, per `padded`, rather than by the sheet.
+      contentPadding={0}
     >
-      <View style={view(styles.flex1, styles.justifyEnd)}>
-        <Backdrop
-          progress={progress}
-          onPress={dismissable ? onClose : undefined}
-        />
-
-        <Animated.View
-          accessibilityViewIsModal
-          testID="bottom-sheet"
-          onLayout={handleLayout}
-          style={view(styles.bgCard, styles.shadowLg, {
-            borderTopLeftRadius: radii["2xl"],
-            borderTopRightRadius: radii["2xl"],
-            paddingBottom: insets.bottom + spacing[4],
-            transform: [{ translateY }],
-          })}
-        >
-          <View {...panResponder.panHandlers}>
-            <View style={view(styles.itemsCenter, styles.pt3, styles.pb2)}>
-              <View
-                testID="bottom-sheet-handle"
-                style={view({
-                  width: spacing[10],
-                  height: spacing[1],
-                  borderRadius: radii.full,
-                  backgroundColor: colors.border,
-                })}
-              />
-            </View>
-
+      {mounted ? (
+        <RNHostView matchContents>
+          <View
+            testID="bottom-sheet"
+            style={view(
+              // `matchContents` sizes the host from its content, and content
+              // with no width of its own grows to its longest unwrapped line,
+              // running past the sheet and hiding the gutter. Pinning it to
+              // the sheet's width lets text wrap and the gutter show.
+              { width: Math.min(screenWidth, MAX_SHEET_WIDTH) },
+              styles.pb4,
+              // iOS draws its drag indicator over the content; Android gives
+              // its handle a row of its own.
+              Platform.OS === "ios" && styles.pt6,
+            )}
+          >
             {title ? (
               <View style={view(styles.px4, styles.pb3)}>
                 <AppText variant="title">{title}</AppText>
               </View>
             ) : null}
-          </View>
 
-          {/*
-            Content taller than the sheet's ceiling scrolls rather than running
-            off the bottom of the screen. The drag gesture lives on the header
-            above, so the two never compete for the same downward swipe.
-          */}
-          <ScrollView
-            bounces={false}
-            style={{ maxHeight: screenHeight * MAX_HEIGHT_RATIO }}
-            contentContainerStyle={view(padded && styles.px4)}
-          >
-            {children}
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
+            <ScrollView
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+              style={{ maxHeight: screenHeight * MAX_HEIGHT_RATIO }}
+              contentContainerStyle={view(padded && styles.px4)}
+            >
+              {children}
+            </ScrollView>
+          </View>
+        </RNHostView>
+      ) : null}
+    </NativeBottomSheet>
   );
 }

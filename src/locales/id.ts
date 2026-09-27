@@ -1,3 +1,4 @@
+import home from "@/features/home/languages/home.id";
 import onboarding from "@/features/onboarding/languages/onboarding.id";
 import utils from "@/shared/languages/utils.id";
 
@@ -7,6 +8,7 @@ import type { en } from "./en";
 export const id: typeof en = {
   common: {
     features: {
+      home,
       onboarding,
     },
     utils,
