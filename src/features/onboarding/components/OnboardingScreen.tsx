@@ -363,8 +363,8 @@ export function OnboardingScreen() {
                     // The amount is what this step is about, so it is set at
                     // display size rather than as ordinary form text.
                     style={{
-                      height: 72,
-                      fontSize: fontSize["3xl"],
+                      height: 60,
+                      fontSize: fontSize["2xl"],
                       fontFamily: fontFamily.bold,
                     }}
                     value={value}

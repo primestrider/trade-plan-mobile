@@ -1,3 +1,4 @@
+import home from "@/features/home/languages/home.en";
 import onboarding from "@/features/onboarding/languages/onboarding.en";
 import utils from "@/shared/languages/utils.en";
 
@@ -11,6 +12,7 @@ import utils from "@/shared/languages/utils.en";
 export const en = {
   common: {
     features: {
+      home,
       onboarding,
     },
     utils,

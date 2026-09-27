@@ -1,25 +1,32 @@
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { useEffect } from "react";
+import { Dimensions, ScrollView, StyleSheet, Text } from "react-native";
 
-import { BottomSheet } from "@/shared/components/BottomSheet";
+import {
+  BottomSheet,
+  SHEET_EXIT_DURATION,
+} from "@/shared/components/BottomSheet";
 import { useThemeStore } from "@/styles";
-import { colors, darkColors, radii, spacing } from "@/styles/tokens";
-
-function sheetStyle() {
-  return StyleSheet.flatten(screen.getByTestId("bottom-sheet").props.style);
-}
+import { colors, darkColors, spacing } from "@/styles/tokens";
 
 /**
- * The sheet is marked `accessibilityViewIsModal`, which by definition hides its
- * siblings — the scrim included — from assistive technology. It is still a
- * touch target, so it has to be queried past that filter.
+ * The native sheet is replaced in `tests/setup.ts` by a stand-in that keeps
+ * `isPresented`, `onDismiss` and the paint color on a node these tests reach.
  */
-function backdrop() {
-  return screen.getByTestId("overlay-backdrop", { includeHiddenElements: true });
-}
+const nativeSheet = () => screen.getByTestId("native-bottom-sheet");
+
+const gutter = () =>
+  StyleSheet.flatten(
+    screen.UNSAFE_getByType(ScrollView).props.contentContainerStyle,
+  );
 
 beforeEach(() => {
+  jest.useFakeTimers();
   act(() => useThemeStore.getState().setMode("light"));
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 describe("BottomSheet", () => {
@@ -30,40 +37,24 @@ describe("BottomSheet", () => {
       </BottomSheet>,
     );
 
+    expect(nativeSheet().props.isPresented).toBe(false);
+    expect(screen.queryByTestId("bottom-sheet")).toBeNull();
     expect(screen.queryByText("Sort by")).toBeNull();
   });
 
-  it("renders its content while open", () => {
-    render(
-      <BottomSheet visible onClose={jest.fn()}>
-        <Text>Newest first</Text>
-      </BottomSheet>,
-    );
-
-    expect(screen.getByText("Newest first")).toBeOnTheScreen();
-  });
-
-  it("renders an optional title", () => {
+  it("presents its content and optional title while open", () => {
     render(
       <BottomSheet visible onClose={jest.fn()} title="Sort by">
         <Text>Newest first</Text>
       </BottomSheet>,
     );
 
+    expect(nativeSheet().props.isPresented).toBe(true);
     expect(screen.getByText("Sort by")).toBeOnTheScreen();
+    expect(screen.getByText("Newest first")).toBeOnTheScreen();
   });
 
-  it("shows a drag handle", () => {
-    render(
-      <BottomSheet visible onClose={jest.fn()}>
-        <Text>Newest first</Text>
-      </BottomSheet>,
-    );
-
-    expect(screen.getByTestId("bottom-sheet-handle")).toBeOnTheScreen();
-  });
-
-  it("closes when the scrim is tapped", () => {
+  it("closes when the user dismisses the native sheet", () => {
     const onClose = jest.fn();
     render(
       <BottomSheet visible onClose={onClose}>
@@ -71,35 +62,80 @@ describe("BottomSheet", () => {
       </BottomSheet>,
     );
 
-    fireEvent.press(backdrop());
+    fireEvent(nativeSheet(), "dismiss");
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("offers no scrim target when it cannot be dismissed", () => {
-    render(
-      <BottomSheet visible dismissable={false} onClose={jest.fn()}>
+  it("keeps its content through the exit, then lets it go", () => {
+    const { rerender } = render(
+      <BottomSheet visible onClose={jest.fn()}>
         <Text>Newest first</Text>
       </BottomSheet>,
     );
 
-    expect(
-      screen.queryByTestId("overlay-backdrop", { includeHiddenElements: true }),
-    ).toBeNull();
+    rerender(
+      <BottomSheet visible={false} onClose={jest.fn()}>
+        <Text>Newest first</Text>
+      </BottomSheet>,
+    );
+
+    // Still there while the sheet slides away, so it never empties mid-exit.
+    expect(screen.getByText("Newest first")).toBeOnTheScreen();
+
+    act(() => jest.advanceTimersByTime(SHEET_EXIT_DURATION));
+
+    expect(screen.queryByText("Newest first")).toBeNull();
   });
 
-  it("rounds only its top corners", () => {
+  it("mounts its content afresh on every open", () => {
+    const mounts = jest.fn();
+
+    function Probe() {
+      useEffect(() => mounts(), []);
+      return <Text>Probe</Text>;
+    }
+
+    const sheet = (visible: boolean) => (
+      <BottomSheet visible={visible} onClose={jest.fn()}>
+        <Probe />
+      </BottomSheet>
+    );
+
+    const { rerender } = render(sheet(true));
+    rerender(sheet(false));
+    act(() => jest.advanceTimersByTime(SHEET_EXIT_DURATION));
+    rerender(sheet(true));
+
+    expect(mounts).toHaveBeenCalledTimes(2);
+  });
+
+  it("paints itself with the theme's card color", () => {
     render(
       <BottomSheet visible onClose={jest.fn()}>
         <Text>Newest first</Text>
       </BottomSheet>,
     );
 
-    const style = sheetStyle();
+    expect(nativeSheet().props.containerColor).toBe(colors.card);
 
-    expect(style.borderTopLeftRadius).toBe(radii["2xl"]);
-    expect(style.borderTopRightRadius).toBe(radii["2xl"]);
-    expect(style.borderBottomLeftRadius).toBeUndefined();
+    act(() => useThemeStore.getState().setMode("dark"));
+
+    expect(nativeSheet().props.containerColor).toBe(darkColors.card);
+  });
+
+  it("pins its content to the sheet width, so the gutter stays on screen", () => {
+    render(
+      <BottomSheet visible onClose={jest.fn()}>
+        <Text>Newest first</Text>
+      </BottomSheet>,
+    );
+
+    const { width } = StyleSheet.flatten(
+      screen.getByTestId("bottom-sheet").props.style,
+    );
+
+    expect(width).toBe(Math.min(Dimensions.get("window").width, 640));
   });
 
   it("scrolls content rather than letting it run off the screen", () => {
@@ -109,8 +145,9 @@ describe("BottomSheet", () => {
       </BottomSheet>,
     );
 
-    const scroller = screen.UNSAFE_getByType(ScrollView);
-    const style = StyleSheet.flatten(scroller.props.style);
+    const style = StyleSheet.flatten(
+      screen.UNSAFE_getByType(ScrollView).props.style,
+    );
 
     expect(style.maxHeight).toBeGreaterThan(0);
   });
@@ -122,11 +159,7 @@ describe("BottomSheet", () => {
       </BottomSheet>,
     );
 
-    const content = StyleSheet.flatten(
-      screen.UNSAFE_getByType(ScrollView).props.contentContainerStyle,
-    );
-
-    expect(content.paddingHorizontal).toBe(spacing[4]);
+    expect(gutter().paddingHorizontal).toBe(spacing[4]);
   });
 
   it("drops the gutter for rows that carry their own", () => {
@@ -136,24 +169,6 @@ describe("BottomSheet", () => {
       </BottomSheet>,
     );
 
-    const content = StyleSheet.flatten(
-      screen.UNSAFE_getByType(ScrollView).props.contentContainerStyle,
-    );
-
-    expect(content?.paddingHorizontal).toBeUndefined();
-  });
-
-  it("follows the active color scheme", () => {
-    render(
-      <BottomSheet visible onClose={jest.fn()}>
-        <Text>Newest first</Text>
-      </BottomSheet>,
-    );
-
-    expect(sheetStyle().backgroundColor).toBe(colors.card);
-
-    act(() => useThemeStore.getState().setMode("dark"));
-
-    expect(sheetStyle().backgroundColor).toBe(darkColors.card);
+    expect(gutter()?.paddingHorizontal).toBeUndefined();
   });
 });

@@ -13,8 +13,9 @@ jest.mock("react-native-keyboard-controller", () =>
 
 // `Screen` reads safe-area insets, which are measured natively. The library's
 // own mock reports a fixed inset, so layout assertions stay deterministic.
-jest.mock("react-native-safe-area-context", () =>
-  require("react-native-safe-area-context/jest/mock").default,
+jest.mock(
+  "react-native-safe-area-context",
+  () => require("react-native-safe-area-context/jest/mock").default,
 );
 
 // MMKV is a Nitro native module with no JS fallback, and `@/styles` now reaches
@@ -41,5 +42,26 @@ jest.mock("react-native-mmkv", () => {
         clearAll: () => store.clear(),
       };
     },
+  };
+});
+
+// `@expo/ui` presents its sheet natively (SwiftUI / Compose), which Jest cannot
+// do, and its host is `pointerEvents="none"` on the React Native side, which
+// would swallow every press inside. The stand-in renders the content inline
+// and keeps its props (`isPresented`, `onDismiss`, …) on a node tests can reach, so a user's
+// swipe-to-dismiss is `fireEvent(sheet, "dismiss")`.
+jest.mock("@expo/ui", () => {
+  const { createElement } = require("react");
+  const { View } = require("react-native");
+
+  return {
+    ...jest.requireActual("@expo/ui"),
+    BottomSheet: ({ children, ...props }: any) =>
+      createElement(
+        View,
+        { testID: "native-bottom-sheet", ...props },
+        children,
+      ),
+    RNHostView: ({ children }: any) => children,
   };
 });
