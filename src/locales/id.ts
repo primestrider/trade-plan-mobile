@@ -1,5 +1,7 @@
 import home from "@/features/home/languages/home.id";
 import onboarding from "@/features/onboarding/languages/onboarding.id";
+import search from "@/features/search/languages/search.id";
+import tradeLog from "@/features/trade-log/languages/trade-log.id";
 import utils from "@/shared/languages/utils.id";
 
 import type { en } from "./en";
@@ -10,6 +12,8 @@ export const id: typeof en = {
     features: {
       home,
       onboarding,
+      search,
+      tradeLog,
     },
     utils,
   },

@@ -1,0 +1,51 @@
+import type { Stock } from "@/features/search/models/api.model";
+
+/** BBCA as the API returned it on 30 Sep 2026, trimmed to the declared fields. */
+export const bbca: Stock = {
+  Id: 68,
+  Code: "BBCA",
+  Name: "Bank Central Asia Tbk.",
+  NewSectorName: "Keuangan",
+  NewSubSectorName: "Bank",
+  NewIndustryName: "Bank",
+  NewSubIndustryName: "Bank",
+  Last: 6075,
+  PrevClosingPrice: 6150,
+  AdjustedOpenPrice: 6100,
+  AdjustedHighPrice: 6150,
+  AdjustedLowPrice: 6050,
+  AdjustedAnnualHighPrice: 8750,
+  AdjustedAnnualLowPrice: 4820,
+  Volume: 221335700,
+  Value: 1349339117500,
+  Frequency: 28248,
+  OneDay: -0.01219512,
+  OneWeek: -0.03571429,
+  OneMonth: -0.06177606,
+  ThreeMonth: 0.09459459,
+  SixMonth: -0.05813953,
+  OneYear: -0.20327869,
+  ThreeYear: -0.31161473,
+  FiveYear: -0.13214286,
+  TenYear: 0.93471338,
+  Mtd: -0.06177606,
+  Ytd: -0.24767802,
+  Per: 12.8997,
+  PerAnnualized: 12.67835,
+  Pbr: 2.76685,
+  PsrAnnualized: 5.89573,
+  PcfrAnnualized: 11.60648,
+  Roe: 0.218233952411899,
+  Capitalization: 748895928750000,
+  FreeFloatPct: 42.46,
+  BetaOneYear: 0.84211113,
+  StdevOneYear: 0.34982991,
+  LastDate: "2026-09-30T00:00:00",
+};
+
+/** A copy of BBCA under another code and name. */
+export const stockLike = (Code: string, Name: string): Stock => ({
+  ...bbca,
+  Code,
+  Name,
+});

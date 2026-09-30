@@ -138,12 +138,19 @@ describe("the (public) group", () => {
     expect(names).not.toContain("(public)/index");
   });
 
-  it("keeps the home screen inside the group rather than hoisting it", () => {
+  it("keeps the tabs, search and stock detail inside the group rather than hoisting them", () => {
     const group = resolveAppRoutes().children.find(
       (child) => child.route === "(public)",
     );
 
-    expect(group?.children.map((child) => child.route)).toContain("index");
+    const tabs = group?.children.find((child) => child.route === "(tabs)");
+
+    expect(group?.children.map((child) => child.route)).toEqual(
+      expect.arrayContaining(["(tabs)", "stock/[code]"]),
+    );
+    expect(tabs?.children.map((child) => child.route)).toEqual(
+      expect.arrayContaining(["index", "search", "trade-log"]),
+    );
   });
 });
 

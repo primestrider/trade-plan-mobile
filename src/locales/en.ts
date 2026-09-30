@@ -1,5 +1,7 @@
 import home from "@/features/home/languages/home.en";
 import onboarding from "@/features/onboarding/languages/onboarding.en";
+import search from "@/features/search/languages/search.en";
+import tradeLog from "@/features/trade-log/languages/trade-log.en";
 import utils from "@/shared/languages/utils.en";
 
 /**
@@ -14,6 +16,8 @@ export const en = {
     features: {
       home,
       onboarding,
+      search,
+      tradeLog,
     },
     utils,
   },

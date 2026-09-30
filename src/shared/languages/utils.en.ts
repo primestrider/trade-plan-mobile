@@ -20,6 +20,12 @@ export default {
     goHome: "Go to home",
   },
 
+  navigation: {
+    home: "Home",
+    tradeLog: "Trade log",
+    searchStock: "Search stocks",
+  },
+
   state: {
     loading: "Loading…",
     empty: "Nothing here yet",
