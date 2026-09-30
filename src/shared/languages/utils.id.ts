@@ -16,6 +16,12 @@ const utilsId: typeof utils = {
     goHome: "Ke beranda",
   },
 
+  navigation: {
+    home: "Beranda",
+    tradeLog: "Trade log",
+    searchStock: "Cari saham",
+  },
+
   state: {
     loading: "Memuat…",
     empty: "Belum ada data",

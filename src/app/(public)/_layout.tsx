@@ -28,7 +28,8 @@ export default function PublicLayout() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      {/* The tabs draw their own menu; each tab claims its own top inset. */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );
 }
