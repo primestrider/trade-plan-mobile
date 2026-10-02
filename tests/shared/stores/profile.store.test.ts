@@ -7,6 +7,7 @@ const initialState = {
   name: "",
   balance: 0,
   hasCompletedOnboarding: false,
+  riskPercent: 2,
 };
 
 beforeEach(() => {
@@ -30,6 +31,24 @@ describe("the onboarding gate", () => {
       balance: 10_000_000,
       hasCompletedOnboarding: true,
     });
+  });
+});
+
+describe("risk per trade", () => {
+  it("starts at 2%", () => {
+    expect(useProfileStore.getState().riskPercent).toBe(2);
+  });
+
+  it.each([
+    [1.5, 1.5],
+    [0.1, 0.5],
+    [12, 5],
+    [2.74, 2.5],
+    [Number.NaN, 2],
+  ])("stores %p as %p", (input, stored) => {
+    act(() => useProfileStore.getState().setRiskPercent(input));
+
+    expect(useProfileStore.getState().riskPercent).toBe(stored);
   });
 });
 

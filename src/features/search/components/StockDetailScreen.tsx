@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, View } from "react-native";
@@ -50,6 +50,7 @@ export type StockDetailScreenProps = {
  */
 export function StockDetailScreen({ code }: Readonly<StockDetailScreenProps>) {
   const { t } = useTranslation();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const {
@@ -105,6 +106,17 @@ export function StockDetailScreen({ code }: Readonly<StockDetailScreenProps>) {
       <Stack.Screen options={{ title: code }} />
 
       <Screen
+        footer={
+          stock ? (
+            <Button
+              block
+              title={t("features.tradeLog.action.create")}
+              onPress={() =>
+                router.push({ pathname: "/plan/new", params: { code } })
+              }
+            />
+          ) : undefined
+        }
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

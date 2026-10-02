@@ -11,4 +11,8 @@ export const storageKeys = {
   user: {
     profile: "user.profile",
   },
+
+  trade: {
+    plans: "trade.plans",
+  },
 } as const;

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import { StockDetailScreen } from "@/features/search/components/StockDetailScreen";
 import { fetchStockByCode } from "@/features/search/services/api";
@@ -12,8 +12,11 @@ jest.mock("@/features/search/services/api", () => ({
   fetchStockByCode: jest.fn(),
 }));
 
+const mockPush = jest.fn();
+
 jest.mock("expo-router", () => ({
   Stack: { Screen: () => null },
+  useRouter: () => ({ push: mockPush }),
 }));
 
 const mockFetchStockByCode = jest.mocked(fetchStockByCode);
@@ -51,6 +54,19 @@ it("shows the stock straight from the search list without asking again", () => {
 
   expect(screen.getByText("Bank Central Asia Tbk.")).toBeOnTheScreen();
   expect(mockFetchStockByCode).not.toHaveBeenCalled();
+});
+
+it("starts a plan for this stock from its page", () => {
+  const client = newClient();
+  client.setQueryData(["stocks", "list"], [bbca]);
+
+  renderScreen("BBCA", client);
+  fireEvent.press(screen.getByText("Buat plan"));
+
+  expect(mockPush).toHaveBeenCalledWith({
+    pathname: "/plan/new",
+    params: { code: "BBCA" },
+  });
 });
 
 it("fetches the stock by its code when it is not cached", async () => {
