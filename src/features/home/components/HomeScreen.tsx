@@ -1,12 +1,21 @@
+import { useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Avatar, Screen } from "@/shared/components";
+import { HomeNews } from "@/features/news/components/HomeNews";
+import { ActivePlans } from "@/features/trade-log/components/ActivePlans";
+import { useEffectiveRisk } from "@/features/trade-log/hooks/useEffectiveRisk";
+import {
+  formatPercentValue,
+  formatRupiah,
+} from "@/features/trade-log/helpers/format";
+import { AppText, Avatar, IconButton, Screen } from "@/shared/components";
 import { formatCurrency, formatNumber } from "@/shared/helpers";
-import { useProfileStore } from "@/shared/stores";
-import { useStyles, useTheme, view } from "@/styles";
+import { maxLossPerTrade, useProfileStore } from "@/shared/stores";
+import { text, useStyles, useTheme, view } from "@/styles";
 import { fontSize, letterSpacing } from "@/styles/tokens";
 import { fontFamily } from "@/styles/tokens/typography";
 
@@ -19,6 +28,9 @@ import { EditBalanceSheet } from "./EditBalanceSheet";
  * plan this is, and the capital it is measured against. The balance is set on
  * the bare background rather than in a card, so it reads as the page's
  * headline instead of one tile among many.
+ *
+ * Beneath it, what that capital means for the next trade (the loss limit set
+ * in settings), then the live plans from the trade log and the market news.
  */
 export function HomeScreen() {
   const styles = useStyles();
@@ -26,6 +38,8 @@ export function HomeScreen() {
   const { t } = useTranslation();
   const name = useProfileStore((state) => state.name);
   const balance = useProfileStore((state) => state.balance);
+  const risk = useEffectiveRisk();
+  const router = useRouter();
   const [isEditingBalance, setIsEditingBalance] = useState(false);
 
   // Rupiah is grouped the Indonesian way everywhere, matching onboarding.
@@ -46,7 +60,27 @@ export function HomeScreen() {
           <AppText variant="h3" numberOfLines={1} style={styles.flex1}>
             {t("features.home.greeting", { name })}
           </AppText>
-          <Avatar name={name} size="md" />
+          <IconButton
+            variant="secondary"
+            accessibilityLabel={t("features.home.openSettings")}
+            onPress={() => router.push("/settings")}
+            icon={
+              <SymbolView
+                name={{ ios: "gearshape", android: "settings", web: "settings" }}
+                tintColor={colors.foreground}
+                size={20}
+              />
+            }
+          />
+          <Pressable
+            onPress={() => router.push("/profile")}
+            accessibilityRole="button"
+            accessibilityLabel={t("features.profile.open")}
+            hitSlop={4}
+            style={({ pressed }) => pressed && { opacity: 0.6 }}
+          >
+            <Avatar name={name} size="md" />
+          </Pressable>
         </View>
 
         {/* Read as one amount by screen readers; the split below is visual.
@@ -110,6 +144,58 @@ export function HomeScreen() {
             </AppText>
           </View>
         </Pressable>
+
+        {/* What the capital means for the next trade. Tapping it opens the
+            setting the amount comes from. */}
+        <Pressable
+          onPress={() => router.push("/settings")}
+          accessibilityRole="button"
+          accessibilityHint={t("features.home.risk.hint")}
+          style={({ pressed }) =>
+            view(
+              styles.py6,
+              styles.borderB,
+              styles.borderBorder,
+              pressed && { opacity: 0.6 },
+            )
+          }
+        >
+          <View
+            style={view(
+              styles.flexRow,
+              styles.itemsCenter,
+              styles.justifyBetween,
+              styles.mb1,
+            )}
+          >
+            <AppText color="muted">{t("features.home.risk.label")}</AppText>
+            <AppText variant="label" color="primary">
+              {t("features.home.risk.action")}
+            </AppText>
+          </View>
+          <AppText
+            variant="h2"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
+            {formatRupiah(maxLossPerTrade(balance, risk.percent))}
+          </AppText>
+          <AppText color="muted" style={text(styles.mt2)}>
+            {t("features.home.risk.description", {
+              percent: formatPercentValue(risk.percent),
+            })}
+          </AppText>
+          {risk.lowered ? (
+            <AppText color="warning" style={text(styles.mt2)}>
+              {t("features.tradeLog.performance.streakGuarded", {
+                percent: formatPercentValue(risk.percent),
+              })}
+            </AppText>
+          ) : null}
+        </Pressable>
+
+        <ActivePlans />
+
+        <HomeNews />
       </Screen>
 
       <EditBalanceSheet
