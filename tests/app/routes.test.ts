@@ -138,7 +138,7 @@ describe("the (public) group", () => {
     expect(names).not.toContain("(public)/index");
   });
 
-  it("keeps the tabs, search and stock detail inside the group rather than hoisting them", () => {
+  it("keeps the tabs, stock detail, settings, news and plan pages inside the group rather than hoisting them", () => {
     const group = resolveAppRoutes().children.find(
       (child) => child.route === "(public)",
     );
@@ -146,7 +146,20 @@ describe("the (public) group", () => {
     const tabs = group?.children.find((child) => child.route === "(tabs)");
 
     expect(group?.children.map((child) => child.route)).toEqual(
-      expect.arrayContaining(["(tabs)", "stock/[code]"]),
+      expect.arrayContaining([
+        "(tabs)",
+        "stock/[code]",
+        "settings",
+        "news",
+        "stats",
+        "profile",
+        "plan/new",
+        "plan/[id]/index",
+        "plan/[id]/edit",
+      ]),
+    );
+    expect(rootChildNames().some((route) => route.startsWith("(public)/"))).toBe(
+      false,
     );
     expect(tabs?.children.map((child) => child.route)).toEqual(
       expect.arrayContaining(["index", "search", "trade-log"]),

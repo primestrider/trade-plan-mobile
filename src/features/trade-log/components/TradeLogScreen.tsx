@@ -1,9 +1,11 @@
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, SectionList, View } from "react-native";
+import { Pressable, RefreshControl, SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Button, EmptyState } from "@/shared/components";
+import { syncNow } from "@/features/google-sheets/services/sync";
+import { useSheetStore } from "@/features/google-sheets/stores/sheet.store";
 import { useStyles, view } from "@/styles";
 import { spacing } from "@/styles/tokens";
 
@@ -31,6 +33,9 @@ export function TradeLogScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const plans = usePlanStore((state) => state.plans);
+  // With Google Sheets connected, pulling down takes in edits from the sheet.
+  const isConnected = useSheetStore((state) => state.account !== null);
+  const isSyncing = useSheetStore((state) => state.syncing);
 
   const create = () => router.push("/plan/new");
   const show = (plan: TradePlan) =>
@@ -57,6 +62,11 @@ export function TradeLogScreen() {
     >
       <SectionList
         sections={sections}
+        refreshControl={
+          isConnected ? (
+            <RefreshControl refreshing={isSyncing} onRefresh={() => void syncNow()} />
+          ) : undefined
+        }
         keyExtractor={(plan) => plan.id}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{

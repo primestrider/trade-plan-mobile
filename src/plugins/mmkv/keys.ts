@@ -12,6 +12,10 @@ export const storageKeys = {
     profile: "user.profile",
   },
 
+  google: {
+    sheets: "google.sheets",
+  },
+
   trade: {
     plans: "trade.plans",
   },
