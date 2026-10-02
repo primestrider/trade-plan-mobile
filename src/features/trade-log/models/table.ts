@@ -2,8 +2,14 @@ import { realizedProfit, rMultiple, type TradePlan } from "./plan";
 
 export type Cell = string | number | null;
 
-/** Column names, kept machine-friendly so formulas and scripts can use them. */
+/**
+ * Column names, kept machine-friendly so formulas and scripts can use them.
+ *
+ * `id` comes first so the Google Sheets sync can hide it as column A: it is
+ * how a row is matched back to its plan after the user sorts or filters.
+ */
 export const TRADE_LOG_COLUMNS = [
+  "id",
   "code",
   "name",
   "status",
@@ -20,6 +26,8 @@ export const TRADE_LOG_COLUMNS = [
   "note",
 ] as const;
 
+export type TradeLogColumn = (typeof TRADE_LOG_COLUMNS)[number];
+
 /**
  * The trade log as a table — a header row, then one row per plan, oldest
  * first. Shared by the CSV export and the Google Sheets sync, so a file and
@@ -32,6 +40,7 @@ export function tradeLogTable(plans: readonly TradePlan[]): Cell[][] {
       const r = rMultiple(plan);
 
       return [
+        plan.id,
         plan.code,
         plan.name,
         plan.status,

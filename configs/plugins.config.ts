@@ -1,6 +1,7 @@
 import { ExpoConfig } from "expo/config";
 
 import { fontPlugin } from "./font.config";
+import { googleSignInPlugin } from "./google.config";
 import { localesPlugin } from "./locales.config";
 
 export const plugins: NonNullable<ExpoConfig["plugins"]> = [
@@ -11,6 +12,7 @@ export const plugins: NonNullable<ExpoConfig["plugins"]> = [
   "expo-image",
   "expo-status-bar",
   "expo-web-browser",
+  "expo-sharing",
 
   [
     "expo-splash-screen",
@@ -25,4 +27,7 @@ export const plugins: NonNullable<ExpoConfig["plugins"]> = [
 
   fontPlugin as [string, any],
   localesPlugin as [string, any],
+
+  // Only present once an iOS client ID is configured; see google.config.ts.
+  ...[googleSignInPlugin()].filter((plugin) => plugin !== null),
 ];

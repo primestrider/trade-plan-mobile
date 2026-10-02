@@ -21,9 +21,17 @@ type PlanState = {
   removePlan: (id: string) => void;
   /** Swaps every plan for a restored set; see the backup feature. */
   replacePlans: (plans: TradePlan[]) => void;
+  /**
+   * Takes edits and new rows from the Google Sheet. Patches apply to the
+   * plans as they are now, so an edit made in the app mid-sync survives.
+   */
+  mergeFromSheet: (
+    patches: { id: string; changes: Partial<TradePlan> }[],
+    additions: TradePlan[],
+  ) => void;
 };
 
-const newId = () =>
+export const newPlanId = () =>
   `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 const now = () => new Date().toISOString();
@@ -51,7 +59,7 @@ export const usePlanStore = create<PlanState>()(
         plans: [],
 
         addPlan: (plan) => {
-          const id = newId();
+          const id = newPlanId();
 
           set((state) => ({
             plans: [
@@ -79,6 +87,20 @@ export const usePlanStore = create<PlanState>()(
           patch(id, { status: "closed", closedAt: now(), exitPrice }),
 
         replacePlans: (plans) => set({ plans }),
+
+        mergeFromSheet: (patches, additions) =>
+          set((state) => {
+            const byId = new Map(patches.map((patch) => [patch.id, patch.changes]));
+
+            return {
+              plans: [
+                ...state.plans.map((plan) =>
+                  byId.has(plan.id) ? { ...plan, ...byId.get(plan.id) } : plan,
+                ),
+                ...additions,
+              ],
+            };
+          }),
 
         removePlan: (id) =>
           set((state) => ({

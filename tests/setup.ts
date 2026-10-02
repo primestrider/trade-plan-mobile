@@ -63,5 +63,62 @@ jest.mock("@expo/ui", () => {
         children,
       ),
     RNHostView: ({ children }: any) => children,
+    // Native too. The stand-in keeps `value`/`onValueChange` on a reachable
+    // node, so a drag is `fireEvent(slider, "valueChange", 3)`.
+    Host: ({ children }: any) => createElement(View, null, children),
+    Switch: (props: any) =>
+      createElement(View, { testID: "native-switch", ...props }),
+    Slider: (props: any) =>
+      createElement(View, { testID: "native-slider", ...props }),
+  };
+});
+
+// Google Sign-In is a Nitro native module. The SDK object is all `jest.fn`s
+// for tests to script; the response helpers and status codes keep their real
+// shapes; the branded button is a pressable stand-in that calls `onPress`.
+jest.mock("react-native-nitro-google-signin", () => {
+  const { createElement } = require("react");
+  const { Pressable } = require("react-native");
+
+  const statusCodes = {
+    ONE_TAP_START_FAILED: "ONE_TAP_START_FAILED",
+    PLAY_SERVICES_NOT_AVAILABLE: "PLAY_SERVICES_NOT_AVAILABLE",
+    IN_PROGRESS: "IN_PROGRESS",
+    SIGN_IN_REQUIRED: "SIGN_IN_REQUIRED",
+    SIGN_IN_CANCELLED: "SIGN_IN_CANCELLED",
+    DEVELOPER_ERROR: "DEVELOPER_ERROR",
+  };
+
+  return {
+    statusCodes,
+    GOOGLE_SIGN_IN_BUTTON_HEIGHT: 48,
+    GoogleOneTapSignIn: {
+      configure: jest.fn(),
+      checkPlayServices: jest.fn(async () => undefined),
+      signIn: jest.fn(),
+      createAccount: jest.fn(),
+      presentExplicitSignIn: jest.fn(),
+      requestScopes: jest.fn(),
+      getCurrentUser: jest.fn(() => null),
+      getTokens: jest.fn(),
+      clearCachedAccessToken: jest.fn(async () => undefined),
+      signOut: jest.fn(async () => undefined),
+      revokeAccess: jest.fn(async () => undefined),
+    },
+    isSuccessResponse: (response: any) =>
+      response?.type === "success" && response.data != null,
+    isNoSavedCredentialFoundResponse: (response: any) =>
+      response?.type === "noSavedCredentialFound",
+    isCancelledResponse: (response: any) => response?.type === "cancelled",
+    isErrorWithCode: (error: any) =>
+      error != null && typeof error === "object" && "code" in error,
+    GoogleSignInButton: ({ onPress, disabled, testID }: any) =>
+      createElement(Pressable, {
+        testID,
+        onPress,
+        disabled,
+        accessibilityRole: "button",
+        accessibilityLabel: "Sign in with Google",
+      }),
   };
 });

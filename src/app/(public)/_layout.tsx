@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 
+import { useSheetAutoSync } from "@/features/google-sheets/hooks/useSheetAutoSync";
 import { useTheme } from "@/styles";
 
 /**
@@ -19,6 +20,9 @@ import { useTheme } from "@/styles";
  */
 export default function PublicLayout() {
   const { colors } = useTheme();
+  // Every screen that can change a plan lives under this layout, so the
+  // trade log reaches Google Sheets from wherever it was edited.
+  useSheetAutoSync();
 
   return (
     <Stack
