@@ -1,1 +1,7 @@
-export { useProfileStore, type Profile } from "./profile.store";
+export {
+  clampRiskPercent,
+  maxLossPerTrade,
+  RISK_PERCENT,
+  useProfileStore,
+  type Profile,
+} from "./profile.store";
