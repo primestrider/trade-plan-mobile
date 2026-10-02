@@ -1,4 +1,5 @@
 import home from "@/features/home/languages/home.en";
+import news from "@/features/news/languages/news.en";
 import onboarding from "@/features/onboarding/languages/onboarding.en";
 import search from "@/features/search/languages/search.en";
 import tradeLog from "@/features/trade-log/languages/trade-log.en";
@@ -15,6 +16,7 @@ export const en = {
   common: {
     features: {
       home,
+      news,
       onboarding,
       search,
       tradeLog,
