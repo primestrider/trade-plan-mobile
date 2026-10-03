@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking, View } from "react-native";
-import {
-  GOOGLE_SIGN_IN_BUTTON_HEIGHT,
-  GoogleSignInButton,
-} from "react-native-nitro-google-signin";
 
 import { isGoogleConfigured } from "@/plugins/google";
 import {
@@ -16,8 +12,9 @@ import {
   useToast,
 } from "@/shared/components";
 import { formatRelativeTime } from "@/shared/helpers";
-import { text, useStyles, useTheme, view } from "@/styles";
+import { text, useStyles, view } from "@/styles";
 
+import { GoogleLogo } from "./GoogleLogo";
 import { connectGoogle, disconnectGoogle, syncNow } from "../services/sync";
 import { selectSpreadsheet, useSheetStore } from "../stores/sheet.store";
 
@@ -60,7 +57,6 @@ export function GoogleSheetsSection() {
 
 function ConnectButton() {
   const styles = useStyles();
-  const { isDark } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -79,16 +75,20 @@ function ConnectButton() {
   };
 
   return (
-    <GoogleSignInButton
+    <Button
       testID="google-sign-in"
-      colorScheme={isDark ? "dark" : "light"}
-      size="wide"
-      signInBehavior="none"
+      variant="outline"
+      size="lg"
+      block
+      accessibilityRole="button"
+      accessibilityLabel={t("features.googleSheets.connect")}
       onPress={connect}
       loading={loading}
-      disabled={loading}
-      style={view(styles.mt4, { height: GOOGLE_SIGN_IN_BUTTON_HEIGHT })}
-    />
+      style={view(styles.mt4, styles.bgCard)}
+    >
+      {loading ? null : <GoogleLogo />}
+      <AppText weight="semibold">{t("features.googleSheets.connect")}</AppText>
+    </Button>
   );
 }
 
