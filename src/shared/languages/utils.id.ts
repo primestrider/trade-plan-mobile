@@ -5,6 +5,13 @@ const utilsId: typeof utils = {
   appName: "RN Expo Boilerplate",
   language: "Bahasa",
 
+  theme: {
+    label: "Skema warna",
+    system: "Sistem",
+    light: "Terang",
+    dark: "Gelap",
+  },
+
   action: {
     save: "Simpan",
     cancel: "Batal",

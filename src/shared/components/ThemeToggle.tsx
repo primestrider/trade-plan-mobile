@@ -1,12 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { text, useStyles, useTheme, view, type ThemeMode } from "@/styles";
 
-const modes: readonly { value: ThemeMode; label: string }[] = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
+const modes: readonly ThemeMode[] = ["system", "light", "dark"];
 
 export type ThemeToggleProps = {
   style?: StyleProp<ViewStyle>;
@@ -24,11 +21,12 @@ export type ThemeToggleProps = {
 export function ThemeToggle({ style }: Readonly<ThemeToggleProps>) {
   const styles = useStyles();
   const { mode, setMode } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View
       accessibilityRole="radiogroup"
-      accessibilityLabel="Color scheme"
+      accessibilityLabel={t("utils.theme.label")}
       style={[
         view(
           styles.flexRow,
@@ -40,8 +38,9 @@ export function ThemeToggle({ style }: Readonly<ThemeToggleProps>) {
         style,
       ]}
     >
-      {modes.map(({ value, label }) => {
+      {modes.map((value) => {
         const selected = mode === value;
+        const label = t(`utils.theme.${value}`);
 
         return (
           <Pressable
