@@ -7,7 +7,13 @@ import {
   formatPercentValue,
   formatRupiah,
 } from "@/features/trade-log/helpers/format";
-import { AppText, Avatar, ListItem, Screen } from "@/shared/components";
+import {
+  AppText,
+  Avatar,
+  ListItem,
+  Screen,
+  ThemeToggle,
+} from "@/shared/components";
 import { useProfileStore } from "@/shared/stores";
 import { useStyles, view } from "@/styles";
 
@@ -53,6 +59,11 @@ export function ProfileScreen() {
             showChevron
             onPress={() => router.push("/settings")}
           />
+        </View>
+
+        <View style={view(styles.mt10, styles.gap3)}>
+          <AppText variant="title">{t("features.profile.appearance")}</AppText>
+          <ThemeToggle />
         </View>
 
         <View style={styles.mt10}>

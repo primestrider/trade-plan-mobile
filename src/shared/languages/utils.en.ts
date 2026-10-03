@@ -9,6 +9,13 @@ export default {
   appName: "RN Expo Boilerplate",
   language: "Language",
 
+  theme: {
+    label: "Color scheme",
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+  },
+
   action: {
     save: "Save",
     cancel: "Cancel",

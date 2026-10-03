@@ -5,4 +5,5 @@ export default {
   capital: "Trading capital",
   risk: "Risk per trade",
   settings: "Settings",
+  appearance: "Appearance",
 };

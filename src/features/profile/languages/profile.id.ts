@@ -7,6 +7,7 @@ const id: typeof profile = {
   capital: "Modal trading",
   risk: "Risiko per trade",
   settings: "Pengaturan",
+  appearance: "Tampilan",
 };
 
 export default id;
