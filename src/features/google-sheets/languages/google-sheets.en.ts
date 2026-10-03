@@ -13,6 +13,7 @@ export default {
   notSynced: "Not synced yet",
   cancelled: "Google sign-in was cancelled",
   connectFailed: "Could not connect to Google. Try again.",
+  connect: "Continue with Google",
 
   error: {
     offline: "Could not reach Google. It will try again on your next change.",

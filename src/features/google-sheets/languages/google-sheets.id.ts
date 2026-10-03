@@ -15,6 +15,7 @@ const id: typeof googleSheets = {
   notSynced: "Belum disinkronkan",
   cancelled: "Login Google dibatalkan",
   connectFailed: "Gagal terhubung ke Google. Coba lagi.",
+  connect: "Lanjutkan dengan Google",
 
   error: {
     offline: "Tidak bisa terhubung ke Google. Dicoba lagi saat ada perubahan berikutnya.",
